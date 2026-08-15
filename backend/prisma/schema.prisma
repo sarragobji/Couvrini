@@ -8,10 +8,496 @@ datasource db {
   provider = "postgresql"
 }
 
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  WORKER
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum ShiftStatus {
+  OPEN
+  APPLICATIONS_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum MissionStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReviewRating {
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  NEW_MATCHING_SHIFT
+  APPLICATION_RECEIVED
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+  SHIFT_REMINDER
+  MISSION_ASSIGNED
+  PAYMENT_COMPLETED
+  REVIEW_REQUEST
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ============================================================================
+// CORE USER & PROFILE MODELS
+// ============================================================================
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  firstName String
-  lastName  String
-  createdAt DateTime @default(now())
+  id                       Int                      @id @default(autoincrement())
+  email                    String                   @unique
+  passwordHash             String?
+  firstName                String
+  lastName                 String
+  phone                    String?
+  profilePhotoUrl          String?
+  role                     UserRole                 @default(WORKER)
+  accountStatus            AccountStatus            @default(ACTIVE)
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  workerProfile            WorkerProfile?
+  companyMembers           CompanyMember[]
+  shiftsCreated            Shift[]                  @relation("CreatedByEmployee")
+  applications             Application[]
+  missions                 Mission[]
+  reviewsGiven             Review[]                 @relation("Reviewer")
+  reviewsReceived          Review[]                 @relation("ReviewedUser")
+  paymentsAsPayer          Payment[]                @relation("Payer")
+  paymentsAsRecipient      Payment[]                @relation("Recipient")
+  notifications            Notification[]
+  verifications            Verification[]
+
+  @@index([email])
+  @@index([role])
+  @@index([accountStatus])
+  @@index([createdAt])
+}
+
+model WorkerProfile {
+  id                       Int                      @id @default(autoincrement())
+  userId                   Int                      @unique
+  bio                      String?
+  resumeUrl                String?
+  yearsOfExperience        Int                      @default(0)
+  averageRating            Float                    @default(0.0)
+  totalReviews             Int                      @default(0)
+  isVerified               Boolean                  @default(false)
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills                   WorkerSkill[]
+  categories               WorkerCategory[]
+  availability             WorkerAvailability[]
+  matchScores              WorkerMatchScore[]
+
+  @@index([userId])
+  @@index([isVerified])
+  @@index([averageRating])
+}
+
+// ============================================================================
+// COMPANY & COMPANY MEMBER MODELS
+// ============================================================================
+
+model Company {
+  id                       Int                      @id @default(autoincrement())
+  name                     String
+  description              String?
+  address                  String?
+  city                     String?
+  postalCode               String?
+  country                  String?
+  phone                    String?
+  email                    String?
+  websiteUrl               String?
+  isVerified               Boolean                  @default(false)
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  members                  CompanyMember[]
+  shifts                   Shift[]
+  missions                 Mission[]
+  verifications            Verification[]
+
+  @@index([name])
+  @@index([isVerified])
+  @@index([createdAt])
+}
+
+model CompanyMember {
+  id                       Int                      @id @default(autoincrement())
+  userId                   Int
+  companyId                Int
+  role                     UserRole                 @default(EMPLOYEE)
+  joinedAt                 DateTime                 @default(now())
+
+  // Relationships
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company                  Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@index([role])
+}
+
+// ============================================================================
+// CATEGORY & SKILL MODELS
+// ============================================================================
+
+model Category {
+  id                       Int                      @id @default(autoincrement())
+  name                     String                   @unique
+  description              String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  shifts                   Shift[]
+  workerCategories         WorkerCategory[]
+
+  @@index([name])
+}
+
+model Skill {
+  id                       Int                      @id @default(autoincrement())
+  name                     String                   @unique
+  description              String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  workerSkills             WorkerSkill[]
+  shiftRequiredSkills      ShiftRequiredSkill[]
+
+  @@index([name])
+}
+
+model WorkerCategory {
+  id                       Int                      @id @default(autoincrement())
+  workerProfileId          Int
+  categoryId               Int
+  subscribedAt             DateTime                 @default(now())
+
+  // Relationships
+  workerProfile            WorkerProfile            @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+  category                 Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, categoryId])
+  @@index([categoryId])
+}
+
+model WorkerSkill {
+  id                       Int                      @id @default(autoincrement())
+  workerProfileId          Int
+  skillId                  Int
+  proficiencyLevel         String?                  @default("intermediate")
+  addedAt                  DateTime                 @default(now())
+
+  // Relationships
+  workerProfile            WorkerProfile            @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+  skill                    Skill                    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, skillId])
+  @@index([skillId])
+}
+
+model WorkerAvailability {
+  id                       Int                      @id @default(autoincrement())
+  workerProfileId          Int
+  dayOfWeek                Int                      @default(0)
+  startTime                String?
+  endTime                  String?
+  isAvailable              Boolean                  @default(true)
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  workerProfile            WorkerProfile            @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, dayOfWeek])
+  @@index([isAvailable])
+}
+
+// ============================================================================
+// SHIFT / REPLACEMENT REQUEST MODELS
+// ============================================================================
+
+model Shift {
+  id                       Int                      @id @default(autoincrement())
+  createdByUserId          Int
+  companyId                Int
+  categoryId               Int
+  title                    String?
+  description              String?
+  shiftDate                DateTime
+  startTime                String
+  endTime                  String
+  location                 String?
+  paymentAmount            Decimal                  @default(0)
+  paymentCurrency          String                   @default("USD")
+  status                   ShiftStatus              @default(OPEN)
+  notes                    String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  createdByUser            User                     @relation("CreatedByEmployee", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  company                  Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category                 Category                 @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  requiredSkills           ShiftRequiredSkill[]
+  applications             Application[]
+  missions                 Mission[]
+  matchScores              WorkerMatchScore[]
+
+  @@index([companyId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([shiftDate])
+  @@index([createdByUserId])
+}
+
+model ShiftRequiredSkill {
+  id                       Int                      @id @default(autoincrement())
+  shiftId                  Int
+  skillId                  Int
+  requiredLevel            String?                  @default("intermediate")
+
+  // Relationships
+  shift                    Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  skill                    Skill                    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, skillId])
+  @@index([skillId])
+}
+
+// ============================================================================
+// APPLICATION MODEL
+// ============================================================================
+
+model Application {
+  id                       Int                      @id @default(autoincrement())
+  shiftId                  Int
+  workerId                 Int
+  message                  String?
+  status                   ApplicationStatus        @default(PENDING)
+  appliedAt                DateTime                 @default(now())
+  reviewedAt               DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  shift                    Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  worker                   User                     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  mission                  Mission?
+
+  @@unique([shiftId, workerId])
+  @@index([shiftId])
+  @@index([workerId])
+  @@index([status])
+}
+
+// ============================================================================
+// MISSION / ASSIGNMENT MODEL
+// ============================================================================
+
+model Mission {
+  id                       Int                      @id @default(autoincrement())
+  shiftId                  Int
+  workerId                 Int
+  companyId                Int
+  applicationId            Int                      @unique
+  status                   MissionStatus            @default(ASSIGNED)
+  startedAt                DateTime?
+  completedAt              DateTime?
+  notes                    String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  shift                    Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  worker                   User                     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  company                  Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  application              Application              @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  payment                  Payment?
+  reviews                  Review[]
+
+  @@index([shiftId])
+  @@index([workerId])
+  @@index([companyId])
+  @@index([status])
+}
+
+// ============================================================================
+// REVIEW MODEL
+// ============================================================================
+
+model Review {
+  id                       Int                      @id @default(autoincrement())
+  missionId                Int
+  reviewerId               Int
+  reviewedUserId           Int
+  rating                   ReviewRating
+  comment                  String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  mission                  Mission                  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  reviewer                 User                     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewedUser             User                     @relation("ReviewedUser", fields: [reviewedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, reviewerId])
+  @@index([missionId])
+  @@index([reviewerId])
+  @@index([reviewedUserId])
+}
+
+// ============================================================================
+// VERIFICATION MODEL
+// ============================================================================
+
+model Verification {
+  id                       Int                      @id @default(autoincrement())
+  userId                   Int?
+  companyId                Int?
+  verificationType         String
+  status                   VerificationStatus       @default(PENDING)
+  documentUrl              String?
+  reference                String?
+  submittedAt              DateTime                 @default(now())
+  verifiedAt               DateTime?
+  notes                    String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  user                     User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company                  Company?                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+}
+
+// ============================================================================
+// PAYMENT MODEL
+// ============================================================================
+
+model Payment {
+  id                       Int                      @id @default(autoincrement())
+  missionId                Int                      @unique
+  payerId                  Int
+  recipientId              Int
+  amount                   Decimal
+  currency                 String                   @default("USD")
+  status                   PaymentStatus            @default(PENDING)
+  transactionId            String?
+  paymentDate              DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  mission                  Mission                  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  payer                    User                     @relation("Payer", fields: [payerId], references: [id], onDelete: Cascade)
+  recipient                User                     @relation("Recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([missionId])
+  @@index([payerId])
+  @@index([recipientId])
+  @@index([status])
+}
+
+// ============================================================================
+// NOTIFICATION MODEL
+// ============================================================================
+
+model Notification {
+  id                       Int                      @id @default(autoincrement())
+  userId                   Int
+  type                     NotificationType
+  title                    String
+  message                  String?
+  relatedShiftId           Int?
+  relatedApplicationId     Int?
+  relatedMissionId         Int?
+  isRead                   Boolean                  @default(false)
+  createdAt                DateTime                 @default(now())
+  readAt                   DateTime?
+
+  // Relationships
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// AI MATCHING MODEL (FOR FUTURE AI SERVICE)
+// ============================================================================
+
+model WorkerMatchScore {
+  id                       Int                      @id @default(autoincrement())
+  workerProfileId          Int
+  shiftId                  Int
+  matchScore               Float
+  ranking                  Int?
+  explanation              String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relationships
+  workerProfile            WorkerProfile            @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+  shift                    Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, shiftId])
+  @@index([shiftId])
+  @@index([matchScore])
 }
