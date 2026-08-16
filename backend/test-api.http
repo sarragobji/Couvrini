@@ -1,0 +1,22 @@
+### Register
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@couvrini.com",
+  "password": "Test1234!",
+  "firstName": "Test",
+  "lastName": "User",
+  "role": "WORKER"
+}
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@couvrini.com",
+  "password": "Test1234!"
+}
+### Get current user
+GET http://localhost:3000/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEBjb3V2cmluaS5jb20iLCJyb2xlIjoiV09SS0VSIiwiaWF0IjoxNzg2OTE4MTIzLCJleHAiOjE3ODc1MjI5MjN9.W8Mfze8LpDhj5TpvPs5dPQjAKvH2OojyqAEiLiSAHHI
