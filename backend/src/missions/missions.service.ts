@@ -12,7 +12,20 @@ import { UpdateMissionStatusDto } from './dto/update-mission-status.dto';
 export class MissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMissionById(userId: number, missionId: number) {
+  private async ensureCompanyParticipant(userId: number, companyId: number) {
+    const membership = await this.prisma.companyMember.findUnique({
+      where: { userId_companyId: { userId, companyId } },
+    });
+
+    if (
+      !membership ||
+      (membership.role !== UserRole.EMPLOYEE && membership.role !== UserRole.MANAGER)
+    ) {
+      throw new ForbiddenException('You are not responsible for this company mission');
+    }
+  }
+
+  async getMissionById(user: { id: number; role: UserRole }, missionId: number) {
     const mission = await this.prisma.mission.findUnique({
       where: { id: missionId },
       include: {
@@ -32,21 +45,34 @@ export class MissionsService {
 
     if (!mission) throw new NotFoundException('Mission not found');
 
-    const isParticipant = mission.workerId === userId;
-    const isCompanyMember = await this.prisma.companyMember.findUnique({
-      where: { userId_companyId: { userId, companyId: mission.companyId } },
-    });
-
-    if (!isParticipant && !isCompanyMember) {
-      throw new ForbiddenException('You cannot access this mission');
+    if (user.role !== UserRole.ADMIN && mission.workerId !== user.id) {
+      await this.ensureCompanyParticipant(user.id, mission.companyId);
     }
 
     return mission;
   }
 
-  async getMyMissions(userId: number) {
+  async getMyMissions(user: { id: number; role: UserRole }) {
+    let where: { workerId?: number; companyId?: { in: number[] } };
+
+    if (user.role === UserRole.WORKER) {
+      where = { workerId: user.id };
+    } else if (user.role === UserRole.ADMIN) {
+      where = {};
+    } else {
+      const memberships = await this.prisma.companyMember.findMany({
+        where: {
+          userId: user.id,
+          role: { in: [UserRole.EMPLOYEE, UserRole.MANAGER] },
+        },
+        select: { companyId: true },
+      });
+
+      where = { companyId: { in: memberships.map((item) => item.companyId) } };
+    }
+
     return this.prisma.mission.findMany({
-      where: { workerId: userId },
+      where,
       include: {
         shift: true,
         company: true,
@@ -55,7 +81,11 @@ export class MissionsService {
     });
   }
 
-  async updateMissionStatus(userId: number, missionId: number, dto: UpdateMissionStatusDto) {
+  async updateMissionStatus(
+    user: { id: number; role: UserRole },
+    missionId: number,
+    dto: UpdateMissionStatusDto,
+  ) {
     const mission = await this.prisma.mission.findUnique({
       where: { id: missionId },
       include: { shift: true },
@@ -63,66 +93,46 @@ export class MissionsService {
 
     if (!mission) throw new NotFoundException('Mission not found');
 
-    const isWorker = mission.workerId === userId;
-    const isManager = await this.prisma.companyMember.findUnique({
-      where: { userId_companyId: { userId, companyId: mission.companyId } },
-    });
-
-    if (!isWorker && !(isManager && isManager.role === UserRole.MANAGER)) {
-      throw new ForbiddenException('You cannot update this mission');
+    if (user.role !== UserRole.ADMIN && mission.workerId !== user.id) {
+      await this.ensureCompanyParticipant(user.id, mission.companyId);
     }
 
-    if (dto.status === MissionStatus.COMPLETED) {
-      if (mission.status !== MissionStatus.IN_PROGRESS && mission.status !== MissionStatus.ASSIGNED) {
-        throw new BadRequestException('Mission must be in progress before completing');
-      }
-
-      await this.prisma.mission.update({
-        where: { id: missionId },
-        data: {
-          status: MissionStatus.COMPLETED,
-          completedAt: new Date(),
-        },
-      });
-
-      await this.prisma.shift.update({
-        where: { id: mission.shiftId },
-        data: { status: ShiftStatus.COMPLETED },
-      });
-
-      await this.prisma.notification.create({
-        data: {
-          userId: mission.companyId ? mission.workerId : mission.workerId,
-          type: 'MISSION_ASSIGNED',
-          title: 'Mission completed',
-          message: `Mission #${missionId} was completed.`,
-          relatedMissionId: missionId,
-        },
-      });
-    } else if (dto.status === MissionStatus.IN_PROGRESS) {
-      if (mission.status !== MissionStatus.ASSIGNED) {
-        throw new BadRequestException('Mission must be assigned before progressing');
-      }
-
-      await this.prisma.mission.update({
-        where: { id: missionId },
-        data: { status: MissionStatus.IN_PROGRESS, startedAt: new Date() },
-      });
-    } else if (dto.status === MissionStatus.CANCELLED) {
-      await this.prisma.mission.update({
-        where: { id: missionId },
-        data: { status: MissionStatus.CANCELLED },
-      });
-    } else if (dto.status === MissionStatus.ASSIGNED) {
-      await this.prisma.mission.update({
-        where: { id: missionId },
-        data: { status: MissionStatus.ASSIGNED },
-      });
+    if (dto.status === mission.status) {
+      return mission;
     }
 
-    return this.prisma.mission.findUnique({
-      where: { id: missionId },
-      include: { shift: true, company: true, worker: true },
+    const allowedTransitions: Record<MissionStatus, MissionStatus[]> = {
+      [MissionStatus.ASSIGNED]: [MissionStatus.IN_PROGRESS, MissionStatus.CANCELLED],
+      [MissionStatus.IN_PROGRESS]: [MissionStatus.COMPLETED, MissionStatus.CANCELLED],
+      [MissionStatus.COMPLETED]: [],
+      [MissionStatus.CANCELLED]: [],
+    };
+
+    if (!allowedTransitions[mission.status].includes(dto.status)) {
+      throw new BadRequestException(
+        `Invalid mission status transition from ${mission.status} to ${dto.status}`,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedMission = await tx.mission.update({
+        where: { id: missionId },
+        data: {
+          status: dto.status,
+          startedAt: dto.status === MissionStatus.IN_PROGRESS ? new Date() : undefined,
+          completedAt: dto.status === MissionStatus.COMPLETED ? new Date() : undefined,
+        },
+        include: { shift: true, company: true, worker: true },
+      });
+
+      if (dto.status === MissionStatus.COMPLETED) {
+        await tx.shift.update({
+          where: { id: mission.shiftId },
+          data: { status: ShiftStatus.COMPLETED },
+        });
+      }
+
+      return updatedMission;
     });
   }
 }

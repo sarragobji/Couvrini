@@ -5,7 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ApplicationStatus, ShiftStatus, UserRole } from '../../generated/prisma/enums';
+import {
+  ApplicationStatus,
+  MissionStatus,
+  ShiftStatus,
+  UserRole,
+} from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
@@ -298,19 +303,27 @@ export class ApplicationsService {
 
     if (dto.status === ApplicationStatus.ACCEPTED) {
       const updatedApplication = await this.prisma.$transaction(async (tx) => {
-        const acceptedApplication = await tx.application.findFirst({
+        const lockedShift = await tx.shift.updateMany({
           where: {
-            shiftId: application.shiftId,
-            status: ApplicationStatus.ACCEPTED,
-            id: { not: applicationId },
+            id: application.shiftId,
+            status: ShiftStatus.OPEN,
           },
+          data: { status: ShiftStatus.ASSIGNED },
+        });
+
+        if (lockedShift.count !== 1) {
+          throw new ConflictException(
+            'This shift is no longer available for acceptance',
+          );
+        }
+
+        const existingMission = await tx.mission.findFirst({
+          where: { shiftId: application.shiftId },
           select: { id: true },
         });
 
-        if (acceptedApplication) {
-          throw new ConflictException(
-            'Another application has already been accepted for this shift',
-          );
+        if (existingMission) {
+          throw new ConflictException('A mission already exists for this shift');
         }
 
         await tx.application.update({
@@ -333,9 +346,14 @@ export class ApplicationsService {
           },
         });
 
-        await tx.shift.update({
-          where: { id: application.shiftId },
-          data: { status: ShiftStatus.ASSIGNED },
+        await tx.mission.create({
+          data: {
+            shiftId: application.shiftId,
+            workerId: application.workerId,
+            companyId: application.shift.companyId,
+            applicationId: application.id,
+            status: MissionStatus.ASSIGNED,
+          },
         });
 
         return tx.application.findUnique({

@@ -9,9 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-import { UserRole } from '../../generated/prisma/enums';
 import { MissionsService } from './missions.service';
 import { UpdateMissionStatusDto } from './dto/update-mission-status.dto';
 
@@ -19,17 +16,16 @@ import { UpdateMissionStatusDto } from './dto/update-mission-status.dto';
 export class MissionsController {
   constructor(private readonly missionsService: MissionsService) {}
 
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  async getMyMissions(@Req() req: any) {
+    return this.missionsService.getMyMissions(req.user);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getMissionById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return this.missionsService.getMissionById(req.user.id, id);
-  }
-
-  @Get('my')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.WORKER)
-  async getMyMissions(@Req() req: any) {
-    return this.missionsService.getMyMissions(req.user.id);
+    return this.missionsService.getMissionById(req.user, id);
   }
 
   @Patch(':id/status')
@@ -39,6 +35,6 @@ export class MissionsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMissionStatusDto,
   ) {
-    return this.missionsService.updateMissionStatus(req.user.id, id, dto);
+    return this.missionsService.updateMissionStatus(req.user, id, dto);
   }
 }
