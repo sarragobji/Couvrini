@@ -95,3 +95,5 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsI
 ### 10. Delete worker profile
 DELETE http://localhost:3000/workers/profile
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEBjb3V2cmluaS5jb20iLCJyb2xlIjoiV09SS0VSIiwiaWF0IjoxNzg2OTE4MTIzLCJleHAiOjE3ODc1MjI5MjN9.W8Mfze8LpDhj5TpvPs5dPQjAKvH2OojyqAEiLiSAHHI
+### Get categories
+GET http://localhost:3000/categories
