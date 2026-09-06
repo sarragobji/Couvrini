@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UserRole } from 'generated/prisma/enums';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
       registerDto.password,
       registerDto.firstName,
       registerDto.lastName,
-      registerDto.role,
+      UserRole.WORKER
     );
 
     const payload = { sub: user.id, email: user.email, role: user.role };

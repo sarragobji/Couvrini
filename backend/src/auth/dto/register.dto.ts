@@ -1,5 +1,5 @@
 import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
-import { UserRole } from '../../../generated/prisma/enums';
+//import { UserRole } from '../../../generated/prisma/enums';
 
 export class RegisterDto {
   @IsEmail()
@@ -14,8 +14,9 @@ export class RegisterDto {
 
   @IsString()
   lastName!: string;
-
-  @IsEnum(UserRole)
+  //client does not get to choose role, default to WORKER
+  /*@IsEnum(UserRole)
   @IsOptional()
-  role?: UserRole = UserRole.WORKER;
+  role?: UserRole = UserRole.WORKER; 
+  */
 }
