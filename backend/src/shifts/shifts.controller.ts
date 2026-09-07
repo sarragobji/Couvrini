@@ -19,6 +19,7 @@ import { ShiftsService } from './shifts.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { QueryShiftDto } from './dto/query-shift.dto';
+import { AddShiftRequiredSkillDto } from './dto/add-shift-required-skill.dto';
 
 @Controller('shifts')
 export class ShiftsController {
@@ -59,5 +60,36 @@ export class ShiftsController {
   @Roles(UserRole.EMPLOYEE, UserRole.MANAGER)
   async deleteShift(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.shiftsService.deleteShift(req.user.id, id);
+  }
+
+  @Post(':shiftId/skills')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.EMPLOYEE, UserRole.MANAGER)
+  async addShiftRequiredSkill(
+    @Req() req: any,
+    @Param('shiftId', ParseIntPipe) shiftId: number,
+    @Body() dto: AddShiftRequiredSkillDto,
+  ) {
+    return this.shiftsService.addShiftRequiredSkill(req.user.id, shiftId, dto);
+  }
+
+  @Delete(':shiftId/skills/:skillId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.EMPLOYEE, UserRole.MANAGER)
+  async removeShiftRequiredSkill(
+    @Req() req: any,
+    @Param('shiftId', ParseIntPipe) shiftId: number,
+    @Param('skillId', ParseIntPipe) skillId: number,
+  ) {
+    return this.shiftsService.removeShiftRequiredSkill(req.user.id, shiftId, skillId);
+  }
+
+  @Get(':shiftId/skills')
+  @UseGuards(JwtAuthGuard)
+  async getShiftRequiredSkills(
+    @Req() req: any,
+    @Param('shiftId', ParseIntPipe) shiftId: number,
+  ) {
+    return this.shiftsService.getShiftRequiredSkills(req.user.id, shiftId);
   }
 }

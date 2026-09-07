@@ -24,6 +24,12 @@ export class PaymentsController {
     return this.paymentsService.createPayment(req.user.id, dto);
   }
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getPayments(@Req() req: any) {
+    return this.paymentsService.getPayments(req.user.id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getPaymentById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {

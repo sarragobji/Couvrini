@@ -115,6 +115,23 @@ export class ApplicationsService {
 
     if (viewerRole === UserRole.WORKER && userId !== undefined) {
       where.workerId = userId;
+    } else if (viewerRole === UserRole.EMPLOYEE || viewerRole === UserRole.MANAGER) {
+      if (userId !== undefined) {
+        const memberships = await this.prisma.companyMember.findMany({
+          where: { userId },
+          select: { companyId: true },
+        });
+
+        const companyIds = memberships.map((m) => m.companyId);
+
+        if (companyIds.length === 0) {
+          return [];
+        }
+
+        where.shift = {
+          companyId: { in: companyIds },
+        };
+      }
     }
 
     return this.prisma.application.findMany({

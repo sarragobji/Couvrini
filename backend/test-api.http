@@ -94,6 +94,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsI
 
 ### 10. Delete worker profile
 DELETE http://localhost:3000/workers/profile
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEBjb3V2cmluaS5jb20iLCJyb2xlIjoiV09SS0VSIiwiaWF0IjoxNzg2OTE4MTIzLCJleHAiOjE3ODc1MjI5MjN9.W8Mfze8LpDhj5TpvPs5dPQjAKvH2OojyqAEiLiSAHHI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoid29ya2VyMkB0ZXN0RXhhbXBsZS5jb20iLCJyb2xlIjoiV09SS0VSIiwiaWF0IjoxNzg4Nzk4NjUzLCJleHAiOjE3ODk0MDM0NTN9.4pkCBFtyBOjFEXi05CB0JpU4jKC3FF3zbrH-gG0MCeE
 ### Get categories
 GET http://localhost:3000/categories
+
+### Register worker
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "worker2@testExample.com",
+  "password": "Worker1234!",
+  "firstName": "Ali2",
+  "lastName": "Gobji"
+}

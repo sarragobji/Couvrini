@@ -124,4 +124,68 @@ export class ReviewsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getReviews(userId: number) {
+    return this.prisma.review.findMany({
+      where: {
+        OR: [
+          { reviewerId: userId },
+          { reviewedUserId: userId },
+        ],
+      },
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        reviewedUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        mission: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getReviewById(userId: number, reviewId: number) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        reviewedUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        mission: {
+          include: { shift: true },
+        },
+      },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (review.reviewerId !== userId && review.reviewedUserId !== userId) {
+      throw new ForbiddenException('You can only view your own reviews');
+    }
+
+    return review;
+  }
 }

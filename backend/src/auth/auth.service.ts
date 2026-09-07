@@ -37,6 +37,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Your account is not active');
+    }
+
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash ?? '');
 
     if (!isPasswordValid) {
@@ -67,6 +71,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Your account is not active');
     }
 
     return user;

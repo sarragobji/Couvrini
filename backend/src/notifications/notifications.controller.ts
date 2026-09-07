@@ -20,6 +20,12 @@ export class NotificationsController {
     return this.notificationsService.getUserNotifications(req.user.id);
   }
 
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getNotificationById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.notificationsService.getNotificationById(req.user.id, id);
+  }
+
   @Patch(':id/read')
   @UseGuards(JwtAuthGuard)
   async markAsRead(@Req() req: any, @Param('id', ParseIntPipe) id: number) {

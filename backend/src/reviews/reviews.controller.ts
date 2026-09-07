@@ -22,6 +22,18 @@ export class ReviewsController {
     return this.reviewsService.createReview(req.user.id, dto);
   }
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getReviews(@Req() req: any) {
+    return this.reviewsService.getReviews(req.user.id);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getReviewById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.getReviewById(req.user.id, id);
+  }
+
   @Get('users/:id')
   @UseGuards(JwtAuthGuard)
   async getUserReviews(@Param('id', ParseIntPipe) id: number) {

@@ -17,6 +17,22 @@ export class NotificationsService {
     });
   }
 
+  async getNotificationById(userId: number, notificationId: number) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
+    if (notification.userId !== userId) {
+      throw new ForbiddenException('You cannot access another user\'s notification');
+    }
+
+    return notification;
+  }
+
   async markAsRead(userId: number, notificationId: number) {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },

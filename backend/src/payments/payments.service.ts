@@ -63,6 +63,19 @@ export class PaymentsService {
     return payment;
   }
 
+  async getPayments(userId: number) {
+    return this.prisma.payment.findMany({
+      where: {
+        OR: [
+          { payerId: userId },
+          { recipientId: userId },
+        ],
+      },
+      include: { mission: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async updatePaymentStatus(userId: number, paymentId: number, status: PaymentStatus) {
     const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment) throw new NotFoundException('Payment not found');

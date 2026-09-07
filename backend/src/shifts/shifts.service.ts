@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { QueryShiftDto } from './dto/query-shift.dto';
+import { AddShiftRequiredSkillDto } from './dto/add-shift-required-skill.dto';
 import { ShiftStatus, UserRole } from '../../generated/prisma/enums';
 
 @Injectable()
@@ -416,5 +418,75 @@ export class ShiftsService {
       cancelled: true,
       shift: cancelledShift,
     };
+  }
+
+  async addShiftRequiredSkill(
+    userId: number,
+    shiftId: number,
+    dto: AddShiftRequiredSkillDto,
+  ) {
+    const shift = await this.ensureShiftOwnershipOrManager(shiftId, userId);
+
+    const skill = await this.prisma.skill.findUnique({
+      where: { id: dto.skillId },
+    });
+
+    if (!skill) {
+      throw new NotFoundException('Skill not found');
+    }
+
+    const existing = await this.prisma.shiftRequiredSkill.findUnique({
+      where: { shiftId_skillId: { shiftId, skillId: dto.skillId } },
+    });
+
+    if (existing) {
+      throw new ConflictException('This skill is already required for this shift');
+    }
+
+    const requiredSkill = await this.prisma.shiftRequiredSkill.create({
+      data: {
+        shiftId,
+        skillId: dto.skillId,
+        requiredLevel: dto.requiredLevel,
+      },
+      include: { skill: true },
+    });
+
+    return requiredSkill;
+  }
+
+  async removeShiftRequiredSkill(userId: number, shiftId: number, skillId: number) {
+    const shift = await this.ensureShiftOwnershipOrManager(shiftId, userId);
+
+    const existing = await this.prisma.shiftRequiredSkill.findUnique({
+      where: { shiftId_skillId: { shiftId, skillId } },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('This skill is not required for this shift');
+    }
+
+    await this.prisma.shiftRequiredSkill.delete({
+      where: { shiftId_skillId: { shiftId, skillId } },
+    });
+
+    return { deleted: true };
+  }
+
+  async getShiftRequiredSkills(userId: number, shiftId: number) {
+    const shift = await this.prisma.shift.findUnique({
+      where: { id: shiftId },
+    });
+
+    if (!shift) {
+      throw new NotFoundException('Shift not found');
+    }
+
+    const requiredSkills = await this.prisma.shiftRequiredSkill.findMany({
+      where: { shiftId },
+      include: { skill: true },
+    });
+
+    return requiredSkills;
   }
 }

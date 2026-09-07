@@ -1,6 +1,6 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '../../generated/prisma/enums';
+import { UserRole, AccountStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -108,5 +108,30 @@ export class UsersService {
 
   async validatePassword(password: string, passwordHash: string): Promise<boolean> {
     return bcrypt.compare(password, passwordHash);
+  }
+
+  async updateUserStatus(id: number, accountStatus: AccountStatus) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { accountStatus },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        profilePhotoUrl: true,
+        role: true,
+        accountStatus: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 }
