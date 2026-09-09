@@ -108,3 +108,14 @@ Content-Type: application/json
   "firstName": "Ali2",
   "lastName": "Gobji"
 }
+### create admin
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@testExample.com",
+  "password": "Admin1234!",
+  "firstName": "Admin",
+  "lastName": "User",
+  "role": "ADMIN"
+}
