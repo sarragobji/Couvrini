@@ -11,19 +11,12 @@ import WorkerAvailability from './pages/WorkerAvailability'
 import ShiftList from './pages/ShiftList'
 import ShiftDetails from './pages/ShiftDetails'
 import MyApplications from './pages/MyApplications'
-
-function ManagerDashboard() {
-  const { user, logout } = useAuth()
-  return (
-    <div>
-      <h1>Manager Dashboard</h1>
-      <p>Welcome, {user?.firstName} {user?.lastName}!</p>
-      <button onClick={logout}>
-        Logout
-      </button>
-    </div>
-  )
-}
+import ManagerDashboard from './pages/ManagerDashboard'
+import MyCompany from './pages/MyCompany'
+import CreateShift from './pages/CreateShift'
+import MyShifts from './pages/MyShifts'
+import ManagerShiftDetails from './pages/ManagerShiftDetails'
+import MyMissions from './pages/MyMissions'
 
 function AdminDashboard() {
   const { user, logout } = useAuth()
@@ -56,6 +49,7 @@ function App() {
           <Route path="/worker/shifts" element={<ShiftList />} />
           <Route path="/worker/shifts/:id" element={<ShiftDetails />} />
           <Route path="/worker/applications" element={<MyApplications />} />
+          <Route path="/worker/missions" element={<MyMissions />} />
         </Route>
 
         {/* Manager / Employee protected routes */}
@@ -65,6 +59,10 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<ManagerDashboard />} />
+          <Route path="/dashboard/company" element={<MyCompany />} />
+          <Route path="/dashboard/shifts" element={<MyShifts />} />
+          <Route path="/dashboard/shifts/create" element={<CreateShift />} />
+          <Route path="/dashboard/shifts/:id" element={<ManagerShiftDetails />} />
         </Route>
 
         {/* Admin protected routes */}

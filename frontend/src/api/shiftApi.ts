@@ -2,7 +2,9 @@ import api from './axios'
 
 export interface ShiftRequiredSkill {
   id: number
+  shiftId: number
   skillId: number
+  requiredLevel?: string
   skill: {
     id: number
     name: string

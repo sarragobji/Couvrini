@@ -19,9 +19,14 @@ function Login() {
 
     try {
       await login(email, password)
-
-      // We will improve role-based navigation later.
-      navigate('/worker')
+      const savedUser = JSON.parse(localStorage.getItem('user') || 'null')  
+      if (savedUser?.role === 'WORKER') {
+        navigate('/worker')
+      } else if (savedUser?.role === 'MANAGER' || savedUser?.role === 'EMPLOYEE') {
+        navigate('/dashboard')
+      } else if (savedUser?.role === 'ADMIN') {
+        navigate('/admin')
+      }
     } catch (error: any) {
       setError(
         error.response?.data?.message ||

@@ -31,7 +31,12 @@ function Register() {
 
     try {
       await register(form)
-      navigate('/worker')
+      const savedUser = JSON.parse(localStorage.getItem('user') || 'null')
+      if (savedUser?.role === 'WORKER') {
+        navigate('/worker')
+      } else if (savedUser?.role === 'MANAGER' || savedUser?.role === 'EMPLOYEE') {
+        navigate('/dashboard')
+      }
     } catch (error: any) {
       const message = error.response?.data?.message
 

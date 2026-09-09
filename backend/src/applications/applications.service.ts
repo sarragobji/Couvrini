@@ -56,8 +56,14 @@ export class ApplicationsService {
       where: { shiftId_workerId: { shiftId: dto.shiftId, workerId: userId } },
     });
 
-    if (existingApplication) {
-      throw new ConflictException('You already applied to this shift');
+    if (existingApplication?.status !== ApplicationStatus.WITHDRAWN) {
+      if (existingApplication) {
+        throw new ConflictException('You already applied to this shift');
+      }
+    } else {
+      await this.prisma.application.delete({
+        where: { id: existingApplication.id },
+      });
     }
 
     const workerProfile = await this.prisma.workerProfile.findUnique({

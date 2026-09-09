@@ -44,6 +44,9 @@ function WorkerDashboard() {
       <button onClick={() => navigate('/worker/applications')}>
         My Applications
       </button>
+      <button onClick={() => navigate('/worker/missions')}>
+        My Missions
+      </button>
 
       <br />
       <br />
