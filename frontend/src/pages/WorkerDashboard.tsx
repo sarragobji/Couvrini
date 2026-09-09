@@ -31,6 +31,10 @@ function WorkerDashboard() {
         My Skills
       </button>
 
+      <button onClick={() => navigate('/worker/categories')}>
+        My Categories
+      </button>
+
       <button onClick={() => navigate('/worker/availability')}>
         My Availability
       </button>

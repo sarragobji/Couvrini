@@ -5,27 +5,9 @@ import Register from './pages/Register'
 import ProtectedRoute from './routes/ProtectedRoute'
 import WorkerDashboard from './pages/WorkerDashboard'
 import WorkerProfile from './pages/WorkerProfile'
-
-// function WorkerDashboard() {
-//   const { user, logout } = useAuth()
-
-//   return (
-//     <div>
-//       <h1>Worker Dashboard</h1>
-
-//       <p>
-//         Welcome {user?.firstName} {user?.lastName}
-//       </p>
-
-//       <p>Email: {user?.email}</p>
-//       <p>Role: {user?.role}</p>
-
-//       <button onClick={logout}>
-//         Logout
-//       </button>
-//     </div>
-//   )
-// }
+import WorkerSkills from './pages/WorkerSkills'
+import WorkerCategories from './pages/WorkerCategories'
+import WorkerAvailability from './pages/WorkerAvailability'
 
 function ManagerDashboard() {
   const { user, logout } = useAuth()
@@ -65,6 +47,9 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
           <Route path="/worker" element={<WorkerDashboard />} />
           <Route path="/worker/profile" element={<WorkerProfile />} />
+          <Route path="/worker/skills" element={<WorkerSkills />} />
+          <Route path="/worker/categories" element={<WorkerCategories />} />
+          <Route path="/worker/availability" element={<WorkerAvailability />} />
         </Route>
 
         {/* Manager / Employee protected routes */}

@@ -1,10 +1,39 @@
-/*
-This file contains the API functions for interacting with the worker profile endpoints. It uses the axios instance defined in axios.ts to make HTTP requests to the backend server. The functions include getting, creating, and updating a worker profile. The WorkerProfile and UpdateWorkerProfile interfaces define the structure of the data returned from and sent to the backend.
-Instead of writing the baseURL in every request like api.get('/worker/profile'), we now have getWorkerProfile() which internally calls api.get('/worker/profile'). This way, we can easily change the baseURL if needed, and all requests will automatically use the new baseURL.
-*/
 import api from './axios'
 
+export interface WorkerSkill {
+  id: number
+  skillId: number
+  proficiencyLevel: string
+  skill: Skill
+}
+
+export interface Skill {
+  id: number
+  name: string
+}
+
+export interface WorkerCategory {
+  id: number
+  categoryId: number
+  category: Category
+}
+
+export interface Category {
+  id: number
+  name: string
+  description?: string
+}
+
+export interface Availability {
+  id?: number
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isAvailable: boolean
+}
+
 export interface WorkerProfile {
+  id: number
   userId: number
   bio?: string
   resumeUrl?: string
@@ -12,6 +41,9 @@ export interface WorkerProfile {
   averageRating: number
   totalReviews: number
   isVerified: boolean
+  skills: WorkerSkill[]
+  categories: WorkerCategory[]
+  availability: Availability[]
 }
 
 export interface UpdateWorkerProfile {
@@ -20,21 +52,77 @@ export interface UpdateWorkerProfile {
   yearsOfExperience?: number
 }
 
+// ==================== PROFILE ====================
+
 export const getWorkerProfile = async () => {
   const response = await api.get('/workers/profile')
-  return response.data
+  return response.data as WorkerProfile
 }
 
 export const createWorkerProfile = async (
   data: UpdateWorkerProfile,
 ) => {
   const response = await api.post('/workers/profile', data)
-  return response.data
+  return response.data as WorkerProfile
 }
 
 export const updateWorkerProfile = async (
   data: UpdateWorkerProfile,
 ) => {
-  const response = await api.patch('/workers/profile', data)
-  return response.data
+  const response = await api.put('/workers/profile', data)
+  return response.data as WorkerProfile
+}
+
+// ==================== SKILLS ====================
+
+export const getSkills = async () => {
+  const response = await api.get('/skills')
+  return response.data as Skill[]
+}
+
+export const addWorkerSkill = async (skillId: number) => {
+  const response = await api.post('/workers/skills', {
+    skillId,
+  })
+
+  return response.data as WorkerSkill
+}
+
+export const removeWorkerSkill = async (skillId: number) => {
+  await api.delete(`/workers/skills/${skillId}`)
+}
+
+// ==================== CATEGORIES ====================
+
+export const getCategories = async () => {
+  const response = await api.get('/categories')
+  return response.data as Category[]
+}
+
+export const addWorkerCategory = async (categoryId: number) => {
+  const response = await api.post('/workers/categories', {
+    categoryId,
+  })
+
+  return response.data as WorkerCategory
+}
+
+export const removeWorkerCategory = async (
+  categoryId: number,
+) => {
+  await api.delete(`/workers/categories/${categoryId}`)
+}
+
+// ==================== AVAILABILITY ====================
+
+export const getAvailability = async () => {
+  const response = await api.get('/workers/availability')
+  return response.data as Availability[]
+}
+
+export const updateAvailability = async (
+  availability: Availability,
+) => {
+  const response = await api.post('/workers/availability', availability)
+  return response.data as Availability
 }
