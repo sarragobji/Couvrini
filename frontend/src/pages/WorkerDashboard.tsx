@@ -38,6 +38,12 @@ function WorkerDashboard() {
       <button onClick={() => navigate('/worker/availability')}>
         My Availability
       </button>
+      <button onClick={() => navigate('/worker/shifts')}>
+        Find Shifts
+      </button>
+      <button onClick={() => navigate('/worker/applications')}>
+        My Applications
+      </button>
 
       <br />
       <br />

@@ -8,6 +8,9 @@ import WorkerProfile from './pages/WorkerProfile'
 import WorkerSkills from './pages/WorkerSkills'
 import WorkerCategories from './pages/WorkerCategories'
 import WorkerAvailability from './pages/WorkerAvailability'
+import ShiftList from './pages/ShiftList'
+import ShiftDetails from './pages/ShiftDetails'
+import MyApplications from './pages/MyApplications'
 
 function ManagerDashboard() {
   const { user, logout } = useAuth()
@@ -50,6 +53,9 @@ function App() {
           <Route path="/worker/skills" element={<WorkerSkills />} />
           <Route path="/worker/categories" element={<WorkerCategories />} />
           <Route path="/worker/availability" element={<WorkerAvailability />} />
+          <Route path="/worker/shifts" element={<ShiftList />} />
+          <Route path="/worker/shifts/:id" element={<ShiftDetails />} />
+          <Route path="/worker/applications" element={<MyApplications />} />
         </Route>
 
         {/* Manager / Employee protected routes */}
