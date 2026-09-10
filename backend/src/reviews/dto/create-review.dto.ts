@@ -5,9 +5,6 @@ export class CreateReviewDto {
   @IsInt()
   missionId!: number;
 
-  @IsInt()
-  reviewedUserId!: number;
-
   @IsEnum(ReviewRating)
   rating!: ReviewRating;
 

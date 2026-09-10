@@ -37,17 +37,13 @@ export class ReviewsService {
       throw new ForbiddenException('Only mission participants can leave a review');
     }
 
-    const expectedReviewedUserId = reviewerIsWorker
-      ? mission.shift.createdByUserId
-      : mission.workerId;
+    const reviewedUserId = reviewerIsWorker
+       ? mission.shift.createdByUserId 
+       : mission.workerId
 
-    if (dto.reviewedUserId !== expectedReviewedUserId) {
-      throw new ForbiddenException('You can only review the other mission participant');
-    }
-
-    if (dto.reviewedUserId === userId) {
-      throw new BadRequestException('You cannot review yourself');
-    }
+    if (reviewedUserId === userId) {
+       throw new BadRequestException('You cannot review yourself')
+}
 
     if (mission.worker.role !== UserRole.WORKER) {
       throw new BadRequestException('The mission worker is not a worker account');
@@ -63,7 +59,7 @@ export class ReviewsService {
         data: {
           missionId: dto.missionId,
           reviewerId: userId,
-          reviewedUserId: dto.reviewedUserId,
+          reviewedUserId,
           rating: dto.rating,
           comment: dto.comment ?? undefined,
         },
@@ -79,9 +75,9 @@ export class ReviewsService {
         },
       });
 
-      if (mission.workerId === dto.reviewedUserId) {
+      if (mission.workerId === reviewedUserId) {
         const reviews = await tx.review.findMany({
-          where: { reviewedUserId: dto.reviewedUserId },
+          where: { reviewedUserId: reviewedUserId },
           select: { rating: true },
         });
         const ratingValues: Record<ReviewRating, number> = {
@@ -96,7 +92,7 @@ export class ReviewsService {
           reviews.length;
 
         await tx.workerProfile.updateMany({
-          where: { userId: dto.reviewedUserId },
+          where: { userId: reviewedUserId },
           data: {
             averageRating: average,
             totalReviews: reviews.length,

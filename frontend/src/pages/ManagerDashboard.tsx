@@ -33,6 +33,9 @@ function ManagerDashboard() {
       <button onClick={() => navigate('/dashboard/payments')}>
         Payments
       </button>
+      <button onClick={() => navigate('/dashboard/reviews')}>
+        Reviews
+      </button>
 
       <hr />
 

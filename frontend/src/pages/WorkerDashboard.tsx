@@ -50,6 +50,9 @@ function WorkerDashboard() {
       <button onClick={() => navigate('/worker/payments')}>
         My Payments
       </button> 
+      <button onClick={() => navigate('/worker/reviews')}>
+        My Reviews
+      </button>
 
       <br />
       <br />

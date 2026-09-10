@@ -196,7 +196,16 @@ function MyMissions() {
                 )}
 
                 {mission.status === 'COMPLETED' && (
-                  <p>✓ Mission completed</p>
+                  <>
+                    <p>✓ Mission completed</p>
+                    <button
+                      onClick={() =>
+                        navigate(`/worker/missions/${mission.id}/review`)
+                      }
+                    >
+                      Leave a Review
+                    </button>
+                  </>
                 )}
 
                 {mission.status === 'CANCELLED' && (
