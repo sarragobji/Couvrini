@@ -17,6 +17,8 @@ import CreateShift from './pages/CreateShift'
 import MyShifts from './pages/MyShifts'
 import ManagerShiftDetails from './pages/ManagerShiftDetails'
 import MyMissions from './pages/MyMissions'
+import ManagerPayments from './pages/ManagerPayment'
+import MyPayments from './pages/MyPayment'
 
 function AdminDashboard() {
   const { user, logout } = useAuth()
@@ -50,6 +52,7 @@ function App() {
           <Route path="/worker/shifts/:id" element={<ShiftDetails />} />
           <Route path="/worker/applications" element={<MyApplications />} />
           <Route path="/worker/missions" element={<MyMissions />} />
+          <Route path="/worker/payments" element={<MyPayments />} />
         </Route>
 
         {/* Manager / Employee protected routes */}
@@ -63,6 +66,7 @@ function App() {
           <Route path="/dashboard/shifts" element={<MyShifts />} />
           <Route path="/dashboard/shifts/create" element={<CreateShift />} />
           <Route path="/dashboard/shifts/:id" element={<ManagerShiftDetails />} />
+          <Route path="/dashboard/payments" element={<ManagerPayments />} />
         </Route>
 
         {/* Admin protected routes */}

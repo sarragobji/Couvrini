@@ -29,6 +29,10 @@ function ManagerDashboard() {
       <button onClick={() => navigate('/dashboard/shifts/create')}>
         Create Replacement Shift
       </button>
+    
+      <button onClick={() => navigate('/dashboard/payments')}>
+        Payments
+      </button>
 
       <hr />
 
